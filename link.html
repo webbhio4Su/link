@@ -1,59 +1,105 @@
-<style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Load</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
     body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background: #0f172a;
-        color: #f8fafc;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      color: #fff;
     }
-    .card {
-        background: rgba(30, 41, 59, 0.7);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 40px 30px;
-        border-radius: 20px;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-        text-align: center;
-        width: 90%;
-        max-width: 360px;
+    .spinner {
+      width: 56px;
+      height: 56px;
+      animation: rotate 2s linear infinite;
     }
-    h2 { font-size: 1.25rem; font-weight: 600; margin-bottom: 24px; color: #e2e8f0; }
-    
-    /* Dynamic Neon Ring Spinner */
-    .spinner-ring {
-        position: relative;
-        width: 64px;
-        height: 64px;
-        margin: 0 auto 24px auto;
+    .path {
+      stroke: #fff;
+      stroke-width: 4;
+      stroke-linecap: round;
+      fill: none;
+      stroke-dasharray: 1, 200;
+      animation: dash 1.5s ease-in-out infinite;
     }
-    .spinner-ring div {
-        box-sizing: border-box;
-        display: block;
-        position: absolute;
-        width: 64px;
-        height: 64px;
-        border: 5px solid transparent;
-        border-radius: 50%;
-        animation: ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-        border-color: #38bdf8 transparent transparent transparent;
+    .error-msg {
+      display: none;
+      margin-top: 20px;
+      font-size: 14px;
+      color: #ff4d4d;
+      text-align: center;
+      padding: 0 20px;
     }
-    .spinner-ring div:nth-child(1) { animation-delay: -0.45s; }
-    .spinner-ring div:nth-child(2) { animation-delay: -0.3s; }
-    .spinner-ring div:nth-child(3) { animation-delay: -0.15s; }
-    @keyframes ring {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+    @keyframes rotate {
+      100% { transform: rotate(360deg); }
     }
-    p { font-size: 0.9rem; color: #94a3b8; }
-</style>
+    @keyframes dash {
+      0% {
+        stroke-dasharray: 1, 200;
+        stroke-dashoffset: 0;
+      }
+      50% {
+        stroke-dasharray: 89, 200;
+        stroke-dashoffset: -35px;
+      }
+      100% {
+        stroke-dasharray: 89, 200;
+        stroke-dashoffset: -124px;
+      }
+    }
+  </style>
+</head>
+<body>
 
-<div class="card">
-    <div class="spinner-ring" id="loader">
-        <div></div><div></div><div></div><div></div>
-    </div>
-    <h2 id="status">Đang chuyển hướng...</h2>
-    <p id="message">Vui lòng chờ trong giây lát.</p>
-</div>
+  <!-- Spinner Vòng Xoay SVG -->
+  <svg class="spinner" id="loader" viewBox="25 25 50 50">
+    <circle class="path" cx="50" cy="50" r="20"></circle>
+  </svg>
+
+  <!-- Thông báo lỗi nếu không có link -->
+  <p class="error-msg" id="errorMsg">Không tìm thấy đường dẫn chuyển hướng!</p>
+
+  <script>
+    // Hiệu ứng đổi tiêu đề "Load", "Load.", "Load..", "Load..."
+    let dots = 0;
+    const titleInterval = setInterval(() => {
+      dots = (dots + 1) % 4;
+      document.title = "Load" + ".".repeat(dots);
+    }, 500);
+
+    // Logic lấy URL và chuyển hướng
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetUrl = urlParams.get('to');
+
+    if (targetUrl) {
+      let finalUrl = targetUrl;
+      if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+        finalUrl = 'https://' + targetUrl;
+      }
+
+      // Chuyển hướng sau 800ms
+      setTimeout(() => {
+        window.location.href = finalUrl;
+      }, 800);
+    } else {
+      // Nếu thiếu tham số ?to= thì dừng spinner và hiện thông báo
+      clearInterval(titleInterval);
+      document.title = "Lỗi đường dẫn";
+      document.getElementById('loader').style.display = 'none';
+      document.getElementById('errorMsg').style.display = 'block';
+    }
+  </script>
+
+</body>
+</html>
