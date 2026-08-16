@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đang chuyển hướng...</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f9;
+        }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 15px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2 id="status">Đang chuyển hướng...</h2>
+        <div class="spinner" id="loader"></div>
+        <p id="message">Vui lòng chờ trong giây lát.</p>
+    </div>
+
+    <script>
+        // Lấy thông số từ URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetUrl = urlParams.get('to');
+
+        if (targetUrl) {
+            // Kiểm tra xem URL có hợp lệ không (có http/https chưa)
+            let finalUrl = targetUrl;
+            if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+                finalUrl = 'https://' + targetUrl;
+            }
+
+            // Chuyển hướng sau 1 giây
+            setTimeout(() => {
+                window.location.href = finalUrl;
+            }, 1000);
+        } else {
+            // Trường hợp không nhập link
+            document.getElementById('status').innerText = 'Không tìm thấy liên kết!';
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('message').innerText = 'Vui lòng cung cấp link dạng: link.html?to=https://example.com';
+        }
+    </script>
+
+</body>
+</html>
