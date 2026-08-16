@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Công Cụ Tạo Link Chuyển Hướng</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 480px;
+        }
+        h2 {
+            margin-top: 0;
+            color: #333;
+            text-align: center;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result-box {
+            margin-top: 20px;
+            display: none;
+        }
+        .result-box input {
+            background-color: #e9ecef;
+        }
+        .copy-btn {
+            background-color: #28a745;
+            margin-top: 5px;
+        }
+        .copy-btn:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Tạo Link Chuyển Hướng</h2>
+    
+    <label for="destination">Nhập URL đích muốn chuyển đến:</label>
+    <input type="text" id="destination" placeholder="https://google.com hoặc facebook.com">
+    
+    <button onclick="generateLink()">Tạo Link</button>
+
+    <div class="result-box" id="resultBox">
+        <label for="generatedLink">Link chuyển hướng của bạn:</label>
+        <input type="text" id="generatedLink" readonly>
+        <button class="copy-btn" onclick="copyLink()">Sao chép Link</button>
+    </div>
+</div>
+
+<script>
+    function generateLink() {
+        let dest = document.getElementById('destination').value.trim();
+        if (!dest) {
+            alert('Vui lòng nhập đường dẫn!');
+            return;
+        }
+
+        // Tự động thêm https:// nếu thiếu
+        if (!dest.startsWith('http://') && !dest.startsWith('https://')) {
+            dest = 'https://' + dest;
+        }
+
+        // Lấy đường dẫn gốc của trang hiện tại (ví dụ: https://domain.com/ hoặc http://127.0.0.1:5500/)
+        const origin = window.location.origin + window.location.pathname.replace('index.html', '');
+        
+        // Tạo link đầy đủ dạng .../link.html?to=...
+        const redirectUrl = `${origin}link.html?to=${encodeURIComponent(dest)}`;
+
+        document.getElementById('generatedLink').value = redirectUrl;
+        document.getElementById('resultBox').style.display = 'block';
+    }
+
+    function copyLink() {
+        const linkInput = document.getElementById('generatedLink');
+        linkInput.select();
+        linkInput.setSelectionRange(0, 99999); // Cho thiết bị di động
+
+        navigator.clipboard.writeText(linkInput.value).then(() => {
+            alert('Đã sao chép link thành công!');
+        }).catch(err => {
+            alert('Lỗi khi sao chép: ' + err);
+        });
+    }
+</script>
+
+</body>
+</html>
