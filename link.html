@@ -1,130 +1,59 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Công Cụ Tạo Link Chuyển Hướng</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-        .container {
-            background: #ffffff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 480px;
-        }
-        h2 {
-            margin-top: 0;
-            color: #333;
-            text-align: center;
-        }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            color: #555;
-            font-weight: bold;
-        }
-        input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 14px;
-            margin-bottom: 15px;
-        }
-        button {
-            width: 100%;
-            padding: 12px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        .result-box {
-            margin-top: 20px;
-            display: none;
-        }
-        .result-box input {
-            background-color: #e9ecef;
-        }
-        .copy-btn {
-            background-color: #28a745;
-            margin-top: 5px;
-        }
-        .copy-btn:hover {
-            background-color: #218838;
-        }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <h2>Tạo Link Chuyển Hướng</h2>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #0f172a;
+        color: #f8fafc;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+    }
+    .card {
+        background: rgba(30, 41, 59, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 40px 30px;
+        border-radius: 20px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        text-align: center;
+        width: 90%;
+        max-width: 360px;
+    }
+    h2 { font-size: 1.25rem; font-weight: 600; margin-bottom: 24px; color: #e2e8f0; }
     
-    <label for="destination">Nhập URL đích muốn chuyển đến:</label>
-    <input type="text" id="destination" placeholder="https://google.com hoặc facebook.com">
-    
-    <button onclick="generateLink()">Tạo Link</button>
+    /* Dynamic Neon Ring Spinner */
+    .spinner-ring {
+        position: relative;
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 24px auto;
+    }
+    .spinner-ring div {
+        box-sizing: border-box;
+        display: block;
+        position: absolute;
+        width: 64px;
+        height: 64px;
+        border: 5px solid transparent;
+        border-radius: 50%;
+        animation: ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+        border-color: #38bdf8 transparent transparent transparent;
+    }
+    .spinner-ring div:nth-child(1) { animation-delay: -0.45s; }
+    .spinner-ring div:nth-child(2) { animation-delay: -0.3s; }
+    .spinner-ring div:nth-child(3) { animation-delay: -0.15s; }
+    @keyframes ring {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    p { font-size: 0.9rem; color: #94a3b8; }
+</style>
 
-    <div class="result-box" id="resultBox">
-        <label for="generatedLink">Link chuyển hướng của bạn:</label>
-        <input type="text" id="generatedLink" readonly>
-        <button class="copy-btn" onclick="copyLink()">Sao chép Link</button>
+<div class="card">
+    <div class="spinner-ring" id="loader">
+        <div></div><div></div><div></div><div></div>
     </div>
+    <h2 id="status">Đang chuyển hướng...</h2>
+    <p id="message">Vui lòng chờ trong giây lát.</p>
 </div>
-
-<script>
-    function generateLink() {
-        let dest = document.getElementById('destination').value.trim();
-        if (!dest) {
-            alert('Vui lòng nhập đường dẫn!');
-            return;
-        }
-
-        // Tự động thêm https:// nếu thiếu
-        if (!dest.startsWith('http://') && !dest.startsWith('https://')) {
-            dest = 'https://' + dest;
-        }
-
-        // Lấy đường dẫn gốc của trang hiện tại (ví dụ: https://domain.com/ hoặc http://127.0.0.1:5500/)
-        const origin = window.location.origin + window.location.pathname.replace('index.html', '');
-        
-        // Tạo link đầy đủ dạng .../link.html?to=...
-        const redirectUrl = `${origin}link.html?to=${encodeURIComponent(dest)}`;
-
-        document.getElementById('generatedLink').value = redirectUrl;
-        document.getElementById('resultBox').style.display = 'block';
-    }
-
-    function copyLink() {
-        const linkInput = document.getElementById('generatedLink');
-        linkInput.select();
-        linkInput.setSelectionRange(0, 99999); // Cho thiết bị di động
-
-        navigator.clipboard.writeText(linkInput.value).then(() => {
-            alert('Đã sao chép link thành công!');
-        }).catch(err => {
-            alert('Lỗi khi sao chép: ' + err);
-        });
-    }
-</script>
-
-</body>
-</html>
