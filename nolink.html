@@ -1,0 +1,527 @@
+```html
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Learn Morse Code A-Z</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0b0b0b;
+    color: white;
+}
+
+header {
+    padding: 28px 20px;
+    text-align: center;
+    border-bottom: 1px solid #222;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 32px;
+}
+
+header p {
+    color: #999;
+    margin: 8px 0 0;
+}
+
+.container {
+    max-width: 1000px;
+    margin: auto;
+    padding: 25px 18px 50px;
+}
+
+.tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+
+.tab {
+    flex: 1;
+    padding: 13px;
+    border: 1px solid #333;
+    background: #151515;
+    color: white;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.tab.active {
+    background: white;
+    color: black;
+}
+
+.section {
+    display: none;
+}
+
+.section.active {
+    display: block;
+}
+
+/* BẢNG */
+.morse-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+.card {
+    background: #151515;
+    border: 1px solid #292929;
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: .15s;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    border-color: #777;
+}
+
+.letter {
+    font-size: 32px;
+    font-weight: bold;
+}
+
+.code {
+    margin-top: 8px;
+    font-family: monospace;
+    font-size: 21px;
+    color: #aaa;
+}
+
+.play {
+    margin-top: 12px;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+/* HỌC */
+.lesson {
+    text-align: center;
+    background: #151515;
+    border: 1px solid #292929;
+    border-radius: 18px;
+    padding: 40px 20px;
+}
+
+.lesson-letter {
+    font-size: 90px;
+    font-weight: bold;
+}
+
+.lesson-code {
+    font-family: monospace;
+    font-size: 45px;
+    letter-spacing: 7px;
+    margin: 15px 0 25px;
+}
+
+button {
+    background: white;
+    color: black;
+    border: 0;
+    padding: 12px 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+button:hover {
+    opacity: .85;
+}
+
+.nav-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 25px;
+}
+
+/* QUIZ */
+.quiz {
+    background: #151515;
+    border: 1px solid #292929;
+    border-radius: 18px;
+    padding: 35px 20px;
+    text-align: center;
+}
+
+.quiz-code {
+    font-family: monospace;
+    font-size: 55px;
+    margin: 20px;
+}
+
+.quiz input {
+    width: 100%;
+    max-width: 350px;
+    padding: 14px;
+    background: #0b0b0b;
+    color: white;
+    border: 1px solid #444;
+    border-radius: 10px;
+    text-align: center;
+    font-size: 22px;
+    text-transform: uppercase;
+}
+
+.result {
+    min-height: 30px;
+    margin: 18px;
+    font-weight: bold;
+}
+
+.score {
+    color: #aaa;
+    margin-bottom: 20px;
+}
+
+footer {
+    text-align: center;
+    color: #666;
+    margin-top: 30px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>📡 Learn Morse Code</h1>
+    <p>Học mã Morse từ A đến Z</p>
+</header>
+
+<div class="container">
+
+    <div class="tabs">
+        <button class="tab active" onclick="showTab('table', this)">
+            📖 Bảng Morse
+        </button>
+
+        <button class="tab" onclick="showTab('learn', this)">
+            🎓 Học
+        </button>
+
+        <button class="tab" onclick="showTab('quiz', this)">
+            🎯 Quiz
+        </button>
+    </div>
+
+    <!-- BẢNG -->
+    <section id="table" class="section active">
+        <div class="morse-grid" id="morseGrid"></div>
+    </section>
+
+    <!-- HỌC -->
+    <section id="learn" class="section">
+
+        <div class="lesson">
+
+            <div class="lesson-letter" id="lessonLetter">A</div>
+
+            <div class="lesson-code" id="lessonCode">.-</div>
+
+            <button onclick="playCurrent()">
+                🔊 Phát Morse
+            </button>
+
+            <div class="nav-buttons">
+                <button onclick="previousLetter()">← Trước</button>
+                <button onclick="nextLetter()">Tiếp →</button>
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- QUIZ -->
+    <section id="quiz" class="section">
+
+        <div class="quiz">
+
+            <div class="score">
+                Điểm: <span id="score">0</span>
+                /
+                <span id="total">0</span>
+            </div>
+
+            <div>Mã Morse này là chữ gì?</div>
+
+            <div class="quiz-code" id="quizCode">.-</div>
+
+            <input
+                id="answer"
+                maxlength="1"
+                placeholder="Nhập A-Z"
+                autocomplete="off"
+            >
+
+            <br><br>
+
+            <button onclick="checkAnswer()">
+                Kiểm tra
+            </button>
+
+            <div class="result" id="result"></div>
+
+            <button onclick="newQuestion()">
+                🔄 Câu mới
+            </button>
+
+        </div>
+
+    </section>
+
+    <footer>
+        Morse Code • A-Z
+    </footer>
+
+</div>
+
+<script>
+const morse = {
+    A: ".-",
+    B: "-...",
+    C: "-.-.",
+    D: "-..",
+    E: ".",
+    F: "..-.",
+    G: "--.",
+    H: "....",
+    I: "..",
+    J: ".---",
+    K: "-.-",
+    L: ".-..",
+    M: "--",
+    N: "-.",
+    O: "---",
+    P: ".--.",
+    Q: "--.-",
+    R: ".-.",
+    S: "...",
+    T: "-",
+    U: "..-",
+    V: "...-",
+    W: ".--",
+    X: "-..-",
+    Y: "-.--",
+    Z: "--.."
+};
+
+const letters = Object.keys(morse);
+
+const grid = document.getElementById("morseGrid");
+
+let currentIndex = 0;
+let quizLetter = "";
+let score = 0;
+let total = 0;
+
+
+/* TẠO BẢNG */
+letters.forEach(letter => {
+
+    const card = document.createElement("div");
+
+    card.className = "card";
+
+    card.innerHTML = `
+        <div class="letter">${letter}</div>
+        <div class="code">${morse[letter]}</div>
+        <button class="play">🔊 Nghe</button>
+    `;
+
+    card.querySelector(".play").onclick = (event) => {
+        event.stopPropagation();
+        playMorse(morse[letter]);
+    };
+
+    card.onclick = () => {
+        currentIndex = letters.indexOf(letter);
+        updateLesson();
+        showTab("learn", document.querySelectorAll(".tab")[1]);
+    };
+
+    grid.appendChild(card);
+});
+
+
+/* TAB */
+function showTab(id, button) {
+
+    document.querySelectorAll(".section").forEach(section => {
+        section.classList.remove("active");
+    });
+
+    document.querySelectorAll(".tab").forEach(tab => {
+        tab.classList.remove("active");
+    });
+
+    document.getElementById(id).classList.add("active");
+
+    if (button) {
+        button.classList.add("active");
+    }
+}
+
+
+/* HỌC */
+function updateLesson() {
+
+    const letter = letters[currentIndex];
+
+    document.getElementById("lessonLetter").textContent = letter;
+    document.getElementById("lessonCode").textContent = morse[letter];
+}
+
+function nextLetter() {
+
+    currentIndex++;
+
+    if (currentIndex >= letters.length) {
+        currentIndex = 0;
+    }
+
+    updateLesson();
+}
+
+function previousLetter() {
+
+    currentIndex--;
+
+    if (currentIndex < 0) {
+        currentIndex = letters.length - 1;
+    }
+
+    updateLesson();
+}
+
+function playCurrent() {
+
+    playMorse(morse[letters[currentIndex]]);
+}
+
+
+/* ÂM THANH MORSE */
+function playMorse(code) {
+
+    const AudioContext =
+        window.AudioContext ||
+        window.webkitAudioContext;
+
+    const audio = new AudioContext();
+
+    let time = audio.currentTime;
+
+    const dot = 0.09;
+    const dash = dot * 3;
+    const gap = dot;
+
+    [...code].forEach(symbol => {
+
+        const duration =
+            symbol === "." ? dot : dash;
+
+        const oscillator =
+            audio.createOscillator();
+
+        const gain =
+            audio.createGain();
+
+        oscillator.frequency.value = 650;
+
+        oscillator.connect(gain);
+        gain.connect(audio.destination);
+
+        oscillator.start(time);
+        oscillator.stop(time + duration);
+
+        time += duration + gap;
+    });
+
+    setTimeout(() => {
+        audio.close();
+    }, (time - audio.currentTime) * 1000 + 300);
+}
+
+
+/* QUIZ */
+function newQuestion() {
+
+    quizLetter =
+        letters[Math.floor(Math.random() * letters.length)];
+
+    document.getElementById("quizCode").textContent =
+        morse[quizLetter];
+
+    document.getElementById("answer").value = "";
+
+    document.getElementById("result").textContent = "";
+
+    document.getElementById("answer").focus();
+}
+
+function checkAnswer() {
+
+    const input =
+        document.getElementById("answer").value
+        .trim()
+        .toUpperCase();
+
+    if (!input) return;
+
+    total++;
+
+    if (input === quizLetter) {
+
+        score++;
+
+        document.getElementById("result").textContent =
+            "✅ Chính xác!";
+
+    } else {
+
+        document.getElementById("result").textContent =
+            `❌ Sai! Đáp án là ${quizLetter}`;
+    }
+
+    document.getElementById("score").textContent = score;
+    document.getElementById("total").textContent = total;
+}
+
+
+/* ENTER ĐỂ KIỂM TRA */
+document.getElementById("answer").addEventListener("keydown", event => {
+
+    if (event.key === "Enter") {
+        checkAnswer();
+    }
+
+});
+
+
+/* KHỞI ĐỘNG */
+updateLesson();
+newQuestion();
+</script>
+
+</body>
+</html>
+```
