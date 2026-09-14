@@ -2,8 +2,8 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>LinkShort</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Link Shortener</title>
 
   <style>
     * {
@@ -16,329 +16,313 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
-      background: #f5f5f5;
-      color: #111;
       font-family: Arial, sans-serif;
+      background: #f5f5f5;
     }
 
-    .box {
-      width: 100%;
-      max-width: 650px;
-      background: white;
-      border: 1px solid #e5e5e5;
-      border-radius: 22px;
+    .container {
+      width: min(600px, 92%);
+      background: #fff;
       padding: 30px;
-      box-shadow: 0 10px 35px rgba(0,0,0,.07);
+      border-radius: 20px;
+      box-shadow: 0 10px 35px rgba(0,0,0,.08);
     }
 
     h1 {
-      margin: 0;
       text-align: center;
-      font-size: 32px;
-    }
-
-    .desc {
-      text-align: center;
-      color: #777;
-      margin: 10px 0 28px;
-    }
-
-    .row {
-      display: flex;
-      gap: 10px;
+      margin: 0 0 25px;
     }
 
     input {
-      flex: 1;
-      min-width: 0;
-      height: 52px;
-      padding: 0 16px;
+      width: 100%;
+      height: 50px;
+      padding: 0 15px;
       border: 1px solid #ddd;
-      border-radius: 13px;
+      border-radius: 12px;
+      font-size: 16px;
       outline: none;
-      font-size: 15px;
     }
 
     input:focus {
-      border-color: #111;
+      border-color: #000;
     }
 
     button {
+      width: 100%;
+      height: 50px;
+      margin-top: 12px;
       border: 0;
-      border-radius: 13px;
+      border-radius: 12px;
+      background: #000;
+      color: #fff;
+      font-size: 16px;
       cursor: pointer;
-      font-weight: 600;
     }
 
-    #shorten {
-      background: #111;
-      color: white;
-      padding: 0 22px;
+    button:active {
+      transform: scale(.98);
     }
 
-    #shorten:hover {
-      background: #333;
-    }
-
-    .result {
-      display: none;
+    #result {
       margin-top: 20px;
-      padding: 18px;
-      border-radius: 15px;
-      background: #f6f6f6;
+      word-break: break-all;
     }
 
-    .result-title {
-      font-size: 13px;
-      color: #777;
-      margin-bottom: 8px;
-    }
-
-    .result-row {
-      display: flex;
-      gap: 8px;
-    }
-
-    #shortUrl {
-      flex: 1;
-      min-width: 0;
-      padding: 13px;
-      border-radius: 10px;
-      background: white;
-      border: 1px solid #ddd;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .small-btn {
-      padding: 0 15px;
-      background: white;
-      border: 1px solid #ddd;
-    }
-
-    .small-btn:hover {
-      background: #eee;
+    #result a {
+      color: #06c;
     }
 
     .error {
-      display: none;
-      margin-top: 10px;
       color: #d00;
-      font-size: 13px;
     }
 
     .success {
-      display: none;
-      margin-top: 10px;
-      color: #168300;
-      font-size: 13px;
+      padding: 15px;
+      background: #f5f5f5;
+      border-radius: 12px;
     }
 
-    @media(max-width:600px) {
-      .box {
-        padding: 22px;
-      }
-
-      .row {
-        flex-direction: column;
-      }
-
-      #shorten {
-        height: 50px;
-      }
-
-      .result-row {
-        flex-wrap: wrap;
-      }
-
-      #shortUrl {
-        flex-basis: 100%;
-      }
-
-      .small-btn {
-        height: 45px;
-        flex: 1;
-      }
+    .copy {
+      margin-top: 10px;
+      background: #222;
     }
   </style>
 </head>
 
 <body>
 
-<div class="box">
+  <div class="container">
 
-  <h1>LinkShort</h1>
+    <h1>🔗 Rút gọn link</h1>
 
-  <div class="desc">
-    Rút gọn liên kết nhanh chóng
-  </div>
-
-  <div class="row">
     <input
-      id="url"
+      id="urlInput"
       type="url"
-      placeholder="https://example.com/..."
+      placeholder="Dán link dài vào đây..."
       autocomplete="off"
     >
 
-    <button id="shorten">
-      Rút gọn
+    <button id="shortenButton">
+      Rút gọn link
     </button>
-  </div>
 
-  <div class="error" id="error"></div>
-
-  <div class="success" id="success"></div>
-
-  <div class="result" id="result">
-
-    <div class="result-title">
-      Link ngắn của bạn
-    </div>
-
-    <div class="result-row">
-
-      <div id="shortUrl"></div>
-
-      <button class="small-btn" id="copy">
-        Copy
-      </button>
-
-      <button class="small-btn" id="open">
-        Mở
-      </button>
-
-    </div>
+    <div id="result"></div>
 
   </div>
-
-</div>
 
 <script>
-const input = document.getElementById("url");
-const shorten = document.getElementById("shorten");
-const error = document.getElementById("error");
-const success = document.getElementById("success");
-const result = document.getElementById("result");
-const shortUrl = document.getElementById("shortUrl");
+  /*
+    QUAN TRỌNG:
+    Đổi URL này thành URL Cloudflare Worker của mày.
+  */
 
-let lastUrl = "";
+  const API_URL =
+    "https://TEN-WORKER-CUA-MAY.workers.dev";
 
-function showError(text) {
-  error.textContent = text;
-  error.style.display = "block";
-  success.style.display = "none";
-}
+  const input =
+    document.getElementById("urlInput");
 
-function showSuccess(text) {
-  success.textContent = text;
-  success.style.display = "block";
-  error.style.display = "none";
-}
+  const button =
+    document.getElementById("shortenButton");
 
-async function createShortLink() {
+  const result =
+    document.getElementById("result");
 
-  error.style.display = "none";
-  success.style.display = "none";
 
-  const url = input.value.trim();
+  button.addEventListener("click", shorten);
 
-  if (!url) {
-    showError("Hãy nhập một liên kết.");
-    return;
-  }
 
-  try {
-    const parsed = new URL(url);
+  input.addEventListener("keydown", function(event) {
+    if (event.key === "Enter") {
+      shorten();
+    }
+  });
 
-    if (
-      parsed.protocol !== "http:" &&
-      parsed.protocol !== "https:"
-    ) {
-      throw new Error();
+
+  async function shorten() {
+
+    const originalUrl =
+      input.value.trim();
+
+    result.innerHTML = "";
+
+
+    if (!originalUrl) {
+      result.innerHTML =
+        '<p class="error">Hãy nhập link.</p>';
+
+      return;
     }
 
-  } catch {
-    showError("Liên kết không hợp lệ.");
-    return;
-  }
 
-  shorten.disabled = true;
-  shorten.textContent = "Đang tạo...";
+    try {
 
-  try {
+      new URL(originalUrl);
 
-    const response = await fetch("/api/shorten", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        url: url
-      })
-    });
+    } catch {
 
-    const data = await response.json();
+      result.innerHTML =
+        '<p class="error">Link không hợp lệ.</p>';
 
-    if (!response.ok) {
-      throw new Error(data.error || "Không thể tạo link.");
+      return;
     }
 
-    lastUrl = data.shortUrl;
 
-    shortUrl.textContent = lastUrl;
+    button.disabled = true;
+    button.textContent = "Đang tạo...";
 
-    result.style.display = "block";
+    result.textContent =
+      "Đang kết nối máy chủ...";
 
-    showSuccess("Đã tạo link thành công!");
 
-    input.value = "";
+    try {
 
-  } catch (e) {
+      const response = await fetch(
+        API_URL + "/api/shorten",
+        {
+          method: "POST",
 
-    showError(e.message);
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
 
-  } finally {
+          body: JSON.stringify({
+            url: originalUrl
+          })
+        }
+      );
 
-    shorten.disabled = false;
-    shorten.textContent = "Rút gọn";
+
+      /*
+        Đọc text trước để tránh lỗi:
+        Unexpected token '<'
+      */
+
+      const text =
+        await response.text();
+
+
+      console.log(
+        "HTTP:",
+        response.status
+      );
+
+      console.log(
+        "SERVER:",
+        text
+      );
+
+
+      let data;
+
+
+      try {
+
+        data =
+          JSON.parse(text);
+
+      } catch {
+
+        throw new Error(
+          "Máy chủ đang trả HTML thay vì JSON. Kiểm tra API_URL."
+        );
+
+      }
+
+
+      if (!response.ok) {
+
+        throw new Error(
+          data.error ||
+          "Không thể tạo link."
+        );
+
+      }
+
+
+      result.innerHTML = `
+        <div class="success">
+
+          <strong>Link ngắn:</strong>
+
+          <br><br>
+
+          <a
+            href="${escapeHtml(data.shortUrl)}"
+            target="_blank"
+            rel="noopener"
+          >
+            ${escapeHtml(data.shortUrl)}
+          </a>
+
+          <button
+            class="copy"
+            onclick="copyLink('${escapeJs(data.shortUrl)}')"
+          >
+            Sao chép
+          </button>
+
+        </div>
+      `;
+
+
+    } catch (error) {
+
+      console.error(error);
+
+      result.innerHTML =
+        '<p class="error">' +
+        escapeHtml(error.message) +
+        '</p>';
+
+    }
+
+
+    button.disabled = false;
+    button.textContent =
+      "Rút gọn link";
+  }
+
+
+  async function copyLink(link) {
+
+    try {
+
+      await navigator.clipboard.writeText(link);
+
+      alert("Đã sao chép link!");
+
+    } catch {
+
+      prompt(
+        "Sao chép link:",
+        link
+      );
+
+    }
+  }
+
+
+  function escapeHtml(text) {
+
+    return String(text)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
 
   }
-}
 
-shorten.addEventListener("click", createShortLink);
 
-input.addEventListener("keydown", e => {
-  if (e.key === "Enter") {
-    createShortLink();
+  function escapeJs(text) {
+
+    return String(text)
+      .replaceAll("\\", "\\\\")
+      .replaceAll("'", "\\'");
+
   }
-});
-
-document.getElementById("copy").addEventListener("click", async () => {
-
-  if (!lastUrl) return;
-
-  await navigator.clipboard.writeText(lastUrl);
-
-  const button = document.getElementById("copy");
-
-  button.textContent = "Đã copy ✓";
-
-  setTimeout(() => {
-    button.textContent = "Copy";
-  }, 1500);
-
-});
-
-document.getElementById("open").addEventListener("click", () => {
-
-  if (lastUrl) {
-    window.open(lastUrl, "_blank");
-  }
-
-});
 </script>
 
 </body>
