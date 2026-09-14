@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>LinkShort</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #111;
+      font-family: Arial, sans-serif;
+    }
+
+    .box {
+      width: 100%;
+      max-width: 650px;
+      background: white;
+      border: 1px solid #e5e5e5;
+      border-radius: 22px;
+      padding: 30px;
+      box-shadow: 0 10px 35px rgba(0,0,0,.07);
+    }
+
+    h1 {
+      margin: 0;
+      text-align: center;
+      font-size: 32px;
+    }
+
+    .desc {
+      text-align: center;
+      color: #777;
+      margin: 10px 0 28px;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+    }
+
+    input {
+      flex: 1;
+      min-width: 0;
+      height: 52px;
+      padding: 0 16px;
+      border: 1px solid #ddd;
+      border-radius: 13px;
+      outline: none;
+      font-size: 15px;
+    }
+
+    input:focus {
+      border-color: #111;
+    }
+
+    button {
+      border: 0;
+      border-radius: 13px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    #shorten {
+      background: #111;
+      color: white;
+      padding: 0 22px;
+    }
+
+    #shorten:hover {
+      background: #333;
+    }
+
+    .result {
+      display: none;
+      margin-top: 20px;
+      padding: 18px;
+      border-radius: 15px;
+      background: #f6f6f6;
+    }
+
+    .result-title {
+      font-size: 13px;
+      color: #777;
+      margin-bottom: 8px;
+    }
+
+    .result-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    #shortUrl {
+      flex: 1;
+      min-width: 0;
+      padding: 13px;
+      border-radius: 10px;
+      background: white;
+      border: 1px solid #ddd;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .small-btn {
+      padding: 0 15px;
+      background: white;
+      border: 1px solid #ddd;
+    }
+
+    .small-btn:hover {
+      background: #eee;
+    }
+
+    .error {
+      display: none;
+      margin-top: 10px;
+      color: #d00;
+      font-size: 13px;
+    }
+
+    .success {
+      display: none;
+      margin-top: 10px;
+      color: #168300;
+      font-size: 13px;
+    }
+
+    @media(max-width:600px) {
+      .box {
+        padding: 22px;
+      }
+
+      .row {
+        flex-direction: column;
+      }
+
+      #shorten {
+        height: 50px;
+      }
+
+      .result-row {
+        flex-wrap: wrap;
+      }
+
+      #shortUrl {
+        flex-basis: 100%;
+      }
+
+      .small-btn {
+        height: 45px;
+        flex: 1;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="box">
+
+  <h1>LinkShort</h1>
+
+  <div class="desc">
+    Rút gọn liên kết nhanh chóng
+  </div>
+
+  <div class="row">
+    <input
+      id="url"
+      type="url"
+      placeholder="https://example.com/..."
+      autocomplete="off"
+    >
+
+    <button id="shorten">
+      Rút gọn
+    </button>
+  </div>
+
+  <div class="error" id="error"></div>
+
+  <div class="success" id="success"></div>
+
+  <div class="result" id="result">
+
+    <div class="result-title">
+      Link ngắn của bạn
+    </div>
+
+    <div class="result-row">
+
+      <div id="shortUrl"></div>
+
+      <button class="small-btn" id="copy">
+        Copy
+      </button>
+
+      <button class="small-btn" id="open">
+        Mở
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+const input = document.getElementById("url");
+const shorten = document.getElementById("shorten");
+const error = document.getElementById("error");
+const success = document.getElementById("success");
+const result = document.getElementById("result");
+const shortUrl = document.getElementById("shortUrl");
+
+let lastUrl = "";
+
+function showError(text) {
+  error.textContent = text;
+  error.style.display = "block";
+  success.style.display = "none";
+}
+
+function showSuccess(text) {
+  success.textContent = text;
+  success.style.display = "block";
+  error.style.display = "none";
+}
+
+async function createShortLink() {
+
+  error.style.display = "none";
+  success.style.display = "none";
+
+  const url = input.value.trim();
+
+  if (!url) {
+    showError("Hãy nhập một liên kết.");
+    return;
+  }
+
+  try {
+    const parsed = new URL(url);
+
+    if (
+      parsed.protocol !== "http:" &&
+      parsed.protocol !== "https:"
+    ) {
+      throw new Error();
+    }
+
+  } catch {
+    showError("Liên kết không hợp lệ.");
+    return;
+  }
+
+  shorten.disabled = true;
+  shorten.textContent = "Đang tạo...";
+
+  try {
+
+    const response = await fetch("/api/shorten", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        url: url
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Không thể tạo link.");
+    }
+
+    lastUrl = data.shortUrl;
+
+    shortUrl.textContent = lastUrl;
+
+    result.style.display = "block";
+
+    showSuccess("Đã tạo link thành công!");
+
+    input.value = "";
+
+  } catch (e) {
+
+    showError(e.message);
+
+  } finally {
+
+    shorten.disabled = false;
+    shorten.textContent = "Rút gọn";
+
+  }
+}
+
+shorten.addEventListener("click", createShortLink);
+
+input.addEventListener("keydown", e => {
+  if (e.key === "Enter") {
+    createShortLink();
+  }
+});
+
+document.getElementById("copy").addEventListener("click", async () => {
+
+  if (!lastUrl) return;
+
+  await navigator.clipboard.writeText(lastUrl);
+
+  const button = document.getElementById("copy");
+
+  button.textContent = "Đã copy ✓";
+
+  setTimeout(() => {
+    button.textContent = "Copy";
+  }, 1500);
+
+});
+
+document.getElementById("open").addEventListener("click", () => {
+
+  if (lastUrl) {
+    window.open(lastUrl, "_blank");
+  }
+
+});
+</script>
+
+</body>
+</html>
