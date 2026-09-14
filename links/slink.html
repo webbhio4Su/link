@@ -13,127 +13,176 @@
     body {
       margin: 0;
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       font-family: Arial, sans-serif;
       background: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
     }
 
-    .container {
-      width: min(600px, 92%);
-      background: #fff;
-      padding: 30px;
+    .box {
+      width: 100%;
+      max-width: 600px;
+      background: white;
       border-radius: 20px;
+      padding: 30px;
       box-shadow: 0 10px 35px rgba(0,0,0,.08);
     }
 
     h1 {
+      margin-top: 0;
       text-align: center;
-      margin: 0 0 25px;
     }
 
-    input {
+    .input {
       width: 100%;
-      height: 50px;
-      padding: 0 15px;
+      padding: 15px;
       border: 1px solid #ddd;
       border-radius: 12px;
       font-size: 16px;
       outline: none;
     }
 
-    input:focus {
-      border-color: #000;
+    .input:focus {
+      border-color: #111;
     }
 
     button {
       width: 100%;
-      height: 50px;
       margin-top: 12px;
+      padding: 15px;
       border: 0;
       border-radius: 12px;
-      background: #000;
-      color: #fff;
+      background: #111;
+      color: white;
       font-size: 16px;
       cursor: pointer;
     }
 
-    button:active {
-      transform: scale(.98);
+    button:disabled {
+      opacity: .5;
+      cursor: not-allowed;
     }
 
-    #result {
+    .result {
+      display: none;
       margin-top: 20px;
+      padding: 15px;
+      background: #f1f1f1;
+      border-radius: 12px;
       word-break: break-all;
     }
 
-    #result a {
-      color: #06c;
+    .result a {
+      color: #111;
+      font-weight: bold;
+    }
+
+    .copy {
+      background: #333;
     }
 
     .error {
       color: #d00;
+      margin-top: 15px;
+      text-align: center;
     }
 
-    .success {
-      padding: 15px;
-      background: #f5f5f5;
-      border-radius: 12px;
-    }
-
-    .copy {
-      margin-top: 10px;
-      background: #222;
+    .loading {
+      text-align: center;
+      margin-top: 15px;
+      display: none;
     }
   </style>
 </head>
 
 <body>
 
-  <div class="container">
+  <div class="box">
 
-    <h1>🔗 Rút gọn link</h1>
+    <h1>🔗 Link Shortener</h1>
 
     <input
       id="urlInput"
+      class="input"
       type="url"
-      placeholder="Dán link dài vào đây..."
+      placeholder="Nhập URL cần rút gọn..."
       autocomplete="off"
     >
 
-    <button id="shortenButton">
+    <button id="shortenBtn">
       Rút gọn link
     </button>
 
-    <div id="result"></div>
+    <div id="loading" class="loading">
+      Đang tạo link...
+    </div>
+
+    <div id="error" class="error"></div>
+
+    <div id="result" class="result">
+      <div>Link rút gọn:</div>
+      <br>
+
+      <a
+        id="shortUrl"
+        href="#"
+        target="_blank"
+        rel="noopener"
+      ></a>
+
+      <button id="copyBtn" class="copy">
+        Sao chép
+      </button>
+    </div>
 
   </div>
 
 <script>
-  /*
-    QUAN TRỌNG:
-    Đổi URL này thành URL Cloudflare Worker của mày.
-  */
+  // ==================================================
+  // URL CLOUDFLARE WORKER CỦA MÀY
+  // ==================================================
 
   const API_URL =
-    "https://TEN-WORKER-CUA-MAY.workers.dev";
+    "https://world.sftcdpcute.workers.dev";
 
-  const input =
+
+  // ==================================================
+  // ELEMENTS
+  // ==================================================
+
+  const urlInput =
     document.getElementById("urlInput");
 
-  const button =
-    document.getElementById("shortenButton");
+  const shortenBtn =
+    document.getElementById("shortenBtn");
+
+  const copyBtn =
+    document.getElementById("copyBtn");
 
   const result =
     document.getElementById("result");
 
+  const shortUrl =
+    document.getElementById("shortUrl");
 
-  button.addEventListener("click", shorten);
+  const errorBox =
+    document.getElementById("error");
+
+  const loading =
+    document.getElementById("loading");
 
 
-  input.addEventListener("keydown", function(event) {
-    if (event.key === "Enter") {
+  // ==================================================
+  // RÚT GỌN
+  // ==================================================
+
+  shortenBtn.addEventListener("click", shorten);
+
+
+  urlInput.addEventListener("keydown", function(e) {
+    if (e.key === "Enter") {
       shorten();
     }
   });
@@ -141,188 +190,155 @@
 
   async function shorten() {
 
-    const originalUrl =
-      input.value.trim();
+    errorBox.textContent = "";
+    result.style.display = "none";
 
-    result.innerHTML = "";
+    const originalUrl =
+      urlInput.value.trim();
 
 
     if (!originalUrl) {
-      result.innerHTML =
-        '<p class="error">Hãy nhập link.</p>';
+      errorBox.textContent =
+        "Hãy nhập URL.";
 
       return;
     }
 
 
+    let parsed;
+
     try {
-
-      new URL(originalUrl);
-
+      parsed =
+        new URL(originalUrl);
     } catch {
-
-      result.innerHTML =
-        '<p class="error">Link không hợp lệ.</p>';
+      errorBox.textContent =
+        "URL không hợp lệ.";
 
       return;
     }
 
 
-    button.disabled = true;
-    button.textContent = "Đang tạo...";
+    if (
+      parsed.protocol !== "http:" &&
+      parsed.protocol !== "https:"
+    ) {
+      errorBox.textContent =
+        "Chỉ hỗ trợ HTTP và HTTPS.";
 
-    result.textContent =
-      "Đang kết nối máy chủ...";
+      return;
+    }
+
+
+    shortenBtn.disabled = true;
+    loading.style.display = "block";
 
 
     try {
 
-      const response = await fetch(
-        API_URL + "/api/shorten",
-        {
-          method: "POST",
+      const response =
+        await fetch(
+          API_URL + "/api/shorten",
+          {
+            method: "POST",
 
-          headers: {
-            "Content-Type":
-              "application/json"
-          },
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
 
-          body: JSON.stringify({
-            url: originalUrl
-          })
-        }
-      );
+            body: JSON.stringify({
+              url: originalUrl
+            })
+          }
+        );
 
-
-      /*
-        Đọc text trước để tránh lỗi:
-        Unexpected token '<'
-      */
 
       const text =
         await response.text();
 
 
-      console.log(
-        "HTTP:",
-        response.status
-      );
-
-      console.log(
-        "SERVER:",
-        text
-      );
-
-
       let data;
 
-
       try {
-
         data =
           JSON.parse(text);
-
       } catch {
-
         throw new Error(
-          "Máy chủ đang trả HTML thay vì JSON. Kiểm tra API_URL."
+          "Worker không trả JSON. Kiểm tra URL Worker."
         );
-
       }
 
 
-      if (!response.ok) {
-
+      if (!response.ok || !data.success) {
         throw new Error(
           data.error ||
           "Không thể tạo link."
         );
-
       }
 
 
-      result.innerHTML = `
-        <div class="success">
+      shortUrl.textContent =
+        data.shortUrl;
 
-          <strong>Link ngắn:</strong>
+      shortUrl.href =
+        data.shortUrl;
 
-          <br><br>
-
-          <a
-            href="${escapeHtml(data.shortUrl)}"
-            target="_blank"
-            rel="noopener"
-          >
-            ${escapeHtml(data.shortUrl)}
-          </a>
-
-          <button
-            class="copy"
-            onclick="copyLink('${escapeJs(data.shortUrl)}')"
-          >
-            Sao chép
-          </button>
-
-        </div>
-      `;
+      result.style.display =
+        "block";
 
 
     } catch (error) {
 
       console.error(error);
 
-      result.innerHTML =
-        '<p class="error">' +
-        escapeHtml(error.message) +
-        '</p>';
+      errorBox.textContent =
+        error.message ||
+        "Failed to fetch.";
 
-    }
+    } finally {
 
+      shortenBtn.disabled =
+        false;
 
-    button.disabled = false;
-    button.textContent =
-      "Rút gọn link";
-  }
-
-
-  async function copyLink(link) {
-
-    try {
-
-      await navigator.clipboard.writeText(link);
-
-      alert("Đã sao chép link!");
-
-    } catch {
-
-      prompt(
-        "Sao chép link:",
-        link
-      );
-
+      loading.style.display =
+        "none";
     }
   }
 
 
-  function escapeHtml(text) {
+  // ==================================================
+  // COPY
+  // ==================================================
 
-    return String(text)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
+  copyBtn.addEventListener(
+    "click",
+    async function() {
 
-  }
+      const text =
+        shortUrl.textContent;
 
+      try {
 
-  function escapeJs(text) {
+        await navigator.clipboard
+          .writeText(text);
 
-    return String(text)
-      .replaceAll("\\", "\\\\")
-      .replaceAll("'", "\\'");
+        copyBtn.textContent =
+          "Đã sao chép ✓";
 
-  }
+        setTimeout(() => {
+          copyBtn.textContent =
+            "Sao chép";
+        }, 1500);
+
+      } catch {
+
+        alert(
+          "Không thể sao chép."
+        );
+
+      }
+    }
+  );
 </script>
 
 </body>
