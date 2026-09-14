@@ -1,123 +1,126 @@
-import html from "./index.html";
-
 const CHARS =
   "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
 function generateCode(length = 7) {
-
   let code = "";
 
   for (let i = 0; i < length; i++) {
-    code += CHARS[
-      Math.floor(Math.random() * CHARS.length)
-    ];
+    code += CHARS[Math.floor(Math.random() * CHARS.length)];
   }
 
   return code;
 }
 
-async function createCode(env) {
-
-  for (let i = 0; i < 10; i++) {
-
-    const code = generateCode(7);
-
-    const exists = await env.DB
-      .prepare(
-        "SELECT code FROM links WHERE code = ?"
-      )
-      .bind(code)
-      .first();
-
-    if (!exists) {
-      return code;
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      "Content-Type": "application/json; charset=UTF-8",
+      "Access-Control-Allow-Origin": "*"
     }
-  }
-
-  throw new Error("Không thể tạo mã.");
+  });
 }
 
 export default {
-
   async fetch(request, env) {
 
     const url = new URL(request.url);
 
-    /*
-     * API tạo link
-     */
+    // =========================
+    // TẠO LINK NGẮN
+    // =========================
 
     if (
       request.method === "POST" &&
       url.pathname === "/api/shorten"
     ) {
 
+      let body;
+
       try {
-
-        const body = await request.json();
-
-        const originalUrl =
-          String(body.url || "").trim();
-
-        let parsed;
-
-        try {
-          parsed = new URL(originalUrl);
-        } catch {
-          return Response.json(
-            { error: "URL không hợp lệ." },
-            { status: 400 }
-          );
-        }
-
-        if (
-          parsed.protocol !== "http:" &&
-          parsed.protocol !== "https:"
-        ) {
-          return Response.json(
-            { error: "Chỉ hỗ trợ HTTP và HTTPS." },
-            { status: 400 }
-          );
-        }
-
-        const code = await createCode(env);
-
-        await env.DB
-          .prepare(`
-            INSERT INTO links
-            (code, url, created_at)
-            VALUES (?, ?, ?)
-          `)
-          .bind(
-            code,
-            originalUrl,
-            Date.now()
-          )
-          .run();
-
-        return Response.json({
-          code: code,
-          shortUrl:
-            `${url.origin}/${code}`
-        });
-
-      } catch (error) {
-
-        return Response.json(
-          {
-            error: "Lỗi máy chủ."
-          },
-          {
-            status: 500
-          }
-        );
-
+        body = await request.json();
+      } catch {
+        return json({
+          error: "Dữ liệu gửi lên không hợp lệ."
+        }, 400);
       }
+
+      const originalUrl =
+        String(body?.url || "").trim();
+
+      if (!originalUrl) {
+        return json({
+          error: "Chưa nhập URL."
+        }, 400);
+      }
+
+      let parsed;
+
+      try {
+        parsed = new URL(originalUrl);
+      } catch {
+        return json({
+          error: "URL không hợp lệ."
+        }, 400);
+      }
+
+      if (
+        parsed.protocol !== "http:" &&
+        parsed.protocol !== "https:"
+      ) {
+        return json({
+          error: "Chỉ hỗ trợ HTTP và HTTPS."
+        }, 400);
+      }
+
+      let code;
+
+      for (let i = 0; i < 20; i++) {
+
+        const newCode = generateCode(7);
+
+        const exists = await env.DB
+          .prepare(
+            "SELECT code FROM links WHERE code = ? LIMIT 1"
+          )
+          .bind(newCode)
+          .first();
+
+        if (!exists) {
+          code = newCode;
+          break;
+        }
+      }
+
+      if (!code) {
+        return json({
+          error: "Không thể tạo mã ngắn."
+        }, 500);
+      }
+
+      await env.DB
+        .prepare(`
+          INSERT INTO links
+          (code, url, created_at)
+          VALUES (?, ?, ?)
+        `)
+        .bind(
+          code,
+          originalUrl,
+          Date.now()
+        )
+        .run();
+
+      return json({
+        success: true,
+        code,
+        shortUrl: `${url.origin}/${code}`
+      });
     }
 
-    /*
-     * Link ngắn
-     */
+    // =========================
+    // REDIRECT LINK NGẮN
+    // =========================
 
     if (
       request.method === "GET" &&
@@ -128,29 +131,23 @@ export default {
       const code =
         url.pathname.slice(1);
 
-      if (
-        code &&
-        /^[A-Za-z0-9]{7}$/.test(code)
-      ) {
+      if (/^[A-Za-z0-9]{7}$/.test(code)) {
 
-        const result =
-          await env.DB
-            .prepare(`
-              SELECT url
-              FROM links
-              WHERE code = ?
-              LIMIT 1
-            `)
-            .bind(code)
-            .first();
+        const link = await env.DB
+          .prepare(`
+            SELECT url
+            FROM links
+            WHERE code = ?
+            LIMIT 1
+          `)
+          .bind(code)
+          .first();
 
-        if (result) {
-
+        if (link) {
           return Response.redirect(
-            result.url,
+            link.url,
             302
           );
-
         }
 
         return new Response(
@@ -166,9 +163,9 @@ export default {
       }
     }
 
-    /*
-     * Trang chủ
-     */
+    // =========================
+    // TRANG CHỦ
+    // =========================
 
     if (
       request.method === "GET" &&
@@ -176,7 +173,92 @@ export default {
     ) {
 
       return new Response(
-        html,
+        `<!DOCTYPE html>
+        <html lang="vi">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport"
+                content="width=device-width,initial-scale=1">
+          <title>LinkShort</title>
+        </head>
+
+        <body>
+
+          <h1>LinkShort</h1>
+
+          <input
+            id="url"
+            type="url"
+            placeholder="https://example.com/..."
+          >
+
+          <button onclick="shorten()">
+            Rút gọn
+          </button>
+
+          <p id="result"></p>
+
+          <script>
+            async function shorten() {
+
+              const url =
+                document.getElementById("url").value.trim();
+
+              const result =
+                document.getElementById("result");
+
+              try {
+
+                const response =
+                  await fetch("/api/shorten", {
+                    method: "POST",
+                    headers: {
+                      "Content-Type":
+                        "application/json"
+                    },
+                    body: JSON.stringify({
+                      url: url
+                    })
+                  });
+
+                const text =
+                  await response.text();
+
+                let data;
+
+                try {
+                  data = JSON.parse(text);
+                } catch {
+                  throw new Error(
+                    "Server không trả về JSON. Kiểm tra Worker/API."
+                  );
+                }
+
+                if (!response.ok) {
+                  throw new Error(
+                    data.error || "Có lỗi xảy ra."
+                  );
+                }
+
+                result.innerHTML =
+                  '<a href="' +
+                  data.shortUrl +
+                  '" target="_blank">' +
+                  data.shortUrl +
+                  '</a>';
+
+              } catch (error) {
+
+                result.textContent =
+                  error.message;
+
+              }
+
+            }
+          </script>
+
+        </body>
+        </html>`,
         {
           headers: {
             "Content-Type":
@@ -184,14 +266,11 @@ export default {
           }
         }
       );
-
     }
 
     return new Response(
       "Not Found",
-      {
-        status: 404
-      }
+      { status: 404 }
     );
   }
 };
