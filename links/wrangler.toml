@@ -1,0 +1,11 @@
+name = "linkshort"
+main = "worker.js"
+compatibility_date = "2026-09-14"
+
+[assets]
+directory = "./"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "linkshort-db"
+database_id = "YOUR_DATABASE_ID"
