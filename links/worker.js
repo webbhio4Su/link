@@ -1,28 +1,22 @@
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods":
-    "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers":
-    "Content-Type"
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type"
 };
 
 
 function json(data, status = 200) {
-
   return new Response(
     JSON.stringify(data),
     {
       status,
-
       headers: {
         "Content-Type":
           "application/json; charset=UTF-8",
-
         ...corsHeaders
       }
     }
   );
-
 }
 
 
@@ -39,10 +33,8 @@ function randomCode(length = 7) {
   let code = "";
 
   for (let i = 0; i < length; i++) {
-
     code +=
       chars[bytes[i] % chars.length];
-
   }
 
   return code;
@@ -67,13 +59,11 @@ async function createCode(env) {
     if (!exists) {
       return code;
     }
-
   }
 
   throw new Error(
     "Không thể tạo mã."
   );
-
 }
 
 
@@ -85,26 +75,41 @@ export default {
       new URL(request.url);
 
 
-    /*
-      CORS
-    */
+    // ================================================
+    // CORS PREFLIGHT
+    // ================================================
 
     if (request.method === "OPTIONS") {
 
-      return new Response(
-        null,
-        {
-          status: 204,
-          headers: corsHeaders
-        }
-      );
+      return new Response(null, {
+        status: 204,
+        headers: corsHeaders
+      });
 
     }
 
 
-    /*
-      API: tạo link ngắn
-    */
+    // ================================================
+    // API TEST
+    // ================================================
+
+    if (
+      request.method === "GET" &&
+      url.pathname === "/api"
+    ) {
+
+      return json({
+        success: true,
+        message:
+          "Link Shortener API đang hoạt động."
+      });
+
+    }
+
+
+    // ================================================
+    // CREATE SHORT LINK
+    // ================================================
 
     if (
       request.method === "POST" &&
@@ -117,24 +122,22 @@ export default {
           await request.json();
 
         const originalUrl =
-          String(body.url || "").trim();
+          String(
+            body.url || ""
+          ).trim();
 
 
         if (!originalUrl) {
 
-          return json(
-            {
-              error:
-                "Thiếu URL."
-            },
-            400
-          );
+          return json({
+            success: false,
+            error: "Thiếu URL."
+          }, 400);
 
         }
 
 
         let parsedUrl;
-
 
         try {
 
@@ -143,13 +146,10 @@ export default {
 
         } catch {
 
-          return json(
-            {
-              error:
-                "URL không hợp lệ."
-            },
-            400
-          );
+          return json({
+            success: false,
+            error: "URL không hợp lệ."
+          }, 400);
 
         }
 
@@ -159,27 +159,27 @@ export default {
           parsedUrl.protocol !== "https:"
         ) {
 
-          return json(
-            {
-              error:
-                "Chỉ hỗ trợ HTTP và HTTPS."
-            },
-            400
-          );
+          return json({
+            success: false,
+            error:
+              "Chỉ hỗ trợ HTTP và HTTPS."
+          }, 400);
 
         }
 
 
+        // Tạo code
         const code =
           await createCode(env);
 
 
+        // Lưu database
         await env.DB
-          .prepare(
-            `INSERT INTO links
-             (code, url, created_at)
-             VALUES (?, ?, ?)`
-          )
+          .prepare(`
+            INSERT INTO links
+            (code, url, created_at)
+            VALUES (?, ?, ?)
+          `)
           .bind(
             code,
             originalUrl,
@@ -188,38 +188,44 @@ export default {
           .run();
 
 
+        // Link ngắn
         const shortUrl =
           `${url.origin}/${code}`;
 
 
         return json({
+
           success: true,
+
           code: code,
+
           url: originalUrl,
+
           shortUrl: shortUrl
+
         });
 
 
       } catch (error) {
 
-        return json(
-          {
-            error:
-              error.message ||
-              "Server error."
-          },
-          500
-        );
+        return json({
+
+          success: false,
+
+          error:
+            error.message ||
+            "Server error."
+
+        }, 500);
 
       }
 
     }
 
 
-    /*
-      Link ngắn:
-      /Ab12Cd3
-    */
+    // ================================================
+    // REDIRECT SHORT LINK
+    // ================================================
 
     if (
       request.method === "GET" &&
@@ -247,10 +253,7 @@ export default {
           "Không tìm thấy link.",
           {
             status: 404,
-            headers: {
-              "Content-Type":
-                "text/plain; charset=UTF-8"
-            }
+            headers: corsHeaders
           }
         );
 
@@ -265,76 +268,70 @@ export default {
     }
 
 
-    /*
-      Trang API kiểm tra
-    */
-
-    if (
-      request.method === "GET" &&
-      url.pathname === "/api"
-    ) {
-
-      return json({
-        success: true,
-        message:
-          "Link Shortener API đang hoạt động."
-      });
-
-    }
-
-
-    /*
-      Trang chủ Worker
-    */
+    // ================================================
+    // ROOT
+    // ================================================
 
     if (
       request.method === "GET" &&
       url.pathname === "/"
     ) {
 
-      return new Response(
-        `
+      return new Response(`
 <!DOCTYPE html>
-<html>
+
+<html lang="vi">
+
 <head>
+
 <meta charset="UTF-8">
+
 <title>Link Shortener API</title>
+
 </head>
 
-<body
-style="
+<body style="
 font-family:Arial;
-padding:40px;
 text-align:center;
-"
->
+padding:50px;
+">
 
 <h1>Link Shortener API</h1>
 
 <p>API đang hoạt động.</p>
 
-<p>
-POST /api/shorten
-</p>
+<p>GET /api</p>
+
+<p>POST /api/shorten</p>
 
 </body>
+
 </html>
-        `,
-        {
-          headers: {
-            "Content-Type":
-              "text/html; charset=UTF-8"
-          }
+      `, {
+
+        status: 200,
+
+        headers: {
+          "Content-Type":
+            "text/html; charset=UTF-8",
+
+          ...corsHeaders
         }
-      );
+
+      });
 
     }
 
 
+    // ================================================
+    // NOT FOUND
+    // ================================================
+
     return new Response(
       "Not Found",
       {
-        status: 404
+        status: 404,
+        headers: corsHeaders
       }
     );
 
