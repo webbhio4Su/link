@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Link Shortener</title>
 
   <style>
@@ -14,50 +15,60 @@
       margin: 0;
       min-height: 100vh;
       font-family: Arial, sans-serif;
-      background: #f5f5f5;
+      background: #ffffff;
+      color: #111111;
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 20px;
     }
 
-    .box {
-      width: 100%;
-      max-width: 600px;
-      background: white;
-      border-radius: 20px;
-      padding: 30px;
-      box-shadow: 0 10px 35px rgba(0,0,0,.08);
-    }
-
-    h1 {
-      margin-top: 0;
+    .container {
+      width: min(92%, 520px);
       text-align: center;
     }
 
-    .input {
-      width: 100%;
-      padding: 15px;
-      border: 1px solid #ddd;
-      border-radius: 12px;
-      font-size: 16px;
-      outline: none;
+    h1 {
+      margin: 0 0 10px;
+      font-size: 32px;
     }
 
-    .input:focus {
+    .subtitle {
+      margin: 0 0 30px;
+      color: #666;
+    }
+
+    .box {
+      display: flex;
+      gap: 10px;
+    }
+
+    input {
+      flex: 1;
+      height: 48px;
+      padding: 0 16px;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      outline: none;
+      font-size: 15px;
+    }
+
+    input:focus {
       border-color: #111;
     }
 
     button {
-      width: 100%;
-      margin-top: 12px;
-      padding: 15px;
+      height: 48px;
+      padding: 0 20px;
       border: 0;
       border-radius: 12px;
       background: #111;
       color: white;
-      font-size: 16px;
+      font-size: 15px;
       cursor: pointer;
+    }
+
+    button:hover {
+      opacity: .9;
     }
 
     button:disabled {
@@ -66,172 +77,189 @@
     }
 
     .result {
+      margin-top: 25px;
+      padding: 18px;
+      border: 1px solid #e5e5e5;
+      border-radius: 14px;
       display: none;
-      margin-top: 20px;
-      padding: 15px;
-      background: #f1f1f1;
-      border-radius: 12px;
-      word-break: break-all;
+      text-align: left;
     }
 
-    .result a {
-      color: #111;
-      font-weight: bold;
+    .result-title {
+      font-size: 13px;
+      color: #777;
+      margin-bottom: 8px;
+    }
+
+    .short-link {
+      word-break: break-all;
+      font-size: 15px;
+      margin-bottom: 14px;
     }
 
     .copy {
-      background: #333;
+      width: 100%;
     }
 
     .error {
-      color: #d00;
       margin-top: 15px;
-      text-align: center;
+      color: #d00;
+      font-size: 14px;
+      display: none;
     }
 
-    .loading {
-      text-align: center;
-      margin-top: 15px;
-      display: none;
+    @media (max-width: 500px) {
+      .box {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
     }
   </style>
 </head>
 
 <body>
 
-  <div class="box">
+  <main class="container">
 
-    <h1>🔗 Link Shortener</h1>
+    <h1>Link Shortener</h1>
 
-    <input
-      id="urlInput"
-      class="input"
-      type="url"
-      placeholder="Nhập URL cần rút gọn..."
-      autocomplete="off"
-    >
+    <p class="subtitle">
+      Tạo link ngắn nhanh chóng
+    </p>
 
-    <button id="shortenBtn">
-      Rút gọn link
-    </button>
+    <div class="box">
 
-    <div id="loading" class="loading">
-      Đang tạo link...
+      <input
+        id="urlInput"
+        type="url"
+        placeholder="https://example.com"
+        autocomplete="off"
+      >
+
+      <button id="shortenBtn">
+        Rút gọn
+      </button>
+
     </div>
 
     <div id="error" class="error"></div>
 
     <div id="result" class="result">
-      <div>Link rút gọn:</div>
-      <br>
 
-      <a
-        id="shortUrl"
-        href="#"
-        target="_blank"
-        rel="noopener"
-      ></a>
+      <div class="result-title">
+        Link rút gọn
+      </div>
 
-      <button id="copyBtn" class="copy">
+      <div
+        id="shortLink"
+        class="short-link"
+      ></div>
+
+      <button
+        id="copyBtn"
+        class="copy"
+      >
         Sao chép
       </button>
+
     </div>
 
-  </div>
+  </main>
 
 <script>
-  // ==================================================
-  // URL CLOUDFLARE WORKER CỦA MÀY
-  // ==================================================
 
-  const API_URL =
-    "https://world.sftcdpcute.workers.dev";
+const API_URL =
+  "https://world.sftcdpcute.workers.dev";
 
+const urlInput =
+  document.getElementById("urlInput");
 
-  // ==================================================
-  // ELEMENTS
-  // ==================================================
+const shortenBtn =
+  document.getElementById("shortenBtn");
 
-  const urlInput =
-    document.getElementById("urlInput");
+const copyBtn =
+  document.getElementById("copyBtn");
 
-  const shortenBtn =
-    document.getElementById("shortenBtn");
+const result =
+  document.getElementById("result");
 
-  const copyBtn =
-    document.getElementById("copyBtn");
+const shortLink =
+  document.getElementById("shortLink");
 
-  const result =
-    document.getElementById("result");
-
-  const shortUrl =
-    document.getElementById("shortUrl");
-
-  const errorBox =
-    document.getElementById("error");
-
-  const loading =
-    document.getElementById("loading");
+const errorBox =
+  document.getElementById("error");
 
 
-  // ==================================================
-  // RÚT GỌN
-  // ==================================================
+function showError(message) {
 
-  shortenBtn.addEventListener("click", shorten);
+  errorBox.textContent = message;
 
+  errorBox.style.display = "block";
 
-  urlInput.addEventListener("keydown", function(e) {
-    if (e.key === "Enter") {
-      shorten();
-    }
-  });
+}
 
 
-  async function shorten() {
+function hideError() {
 
-    errorBox.textContent = "";
+  errorBox.style.display = "none";
+
+}
+
+
+shortenBtn.addEventListener(
+  "click",
+  async () => {
+
+    hideError();
+
     result.style.display = "none";
 
     const originalUrl =
       urlInput.value.trim();
 
-
     if (!originalUrl) {
-      errorBox.textContent =
-        "Hãy nhập URL.";
+
+      showError("Vui lòng nhập URL.");
 
       return;
-    }
 
+    }
 
     let parsed;
 
     try {
+
       parsed =
         new URL(originalUrl);
+
     } catch {
-      errorBox.textContent =
-        "URL không hợp lệ.";
+
+      showError("URL không hợp lệ.");
 
       return;
-    }
 
+    }
 
     if (
       parsed.protocol !== "http:" &&
       parsed.protocol !== "https:"
     ) {
-      errorBox.textContent =
-        "Chỉ hỗ trợ HTTP và HTTPS.";
+
+      showError(
+        "Chỉ hỗ trợ HTTP và HTTPS."
+      );
 
       return;
+
     }
 
-
     shortenBtn.disabled = true;
-    loading.style.display = "block";
 
+    shortenBtn.textContent =
+      "Đang tạo...";
 
     try {
 
@@ -246,99 +274,99 @@
                 "application/json"
             },
 
-            body: JSON.stringify({
-              url: originalUrl
-            })
+            body:
+              JSON.stringify({
+                url: originalUrl
+              })
           }
         );
 
+      const data =
+        await response.json();
 
-      const text =
-        await response.text();
+      if (
+        !response.ok ||
+        !data.success
+      ) {
 
-
-      let data;
-
-      try {
-        data =
-          JSON.parse(text);
-      } catch {
-        throw new Error(
-          "Worker không trả JSON. Kiểm tra URL Worker."
-        );
-      }
-
-
-      if (!response.ok || !data.success) {
         throw new Error(
           data.error ||
           "Không thể tạo link."
         );
+
       }
 
+      /*
+       * Link người dùng nhìn thấy
+       *
+       * https://webbhio4su.github.io/link/links/open/ID
+       */
 
-      shortUrl.textContent =
-        data.shortUrl;
+      const publicUrl =
+        `${window.location.origin}/link/links/open/${encodeURIComponent(data.code)}`;
 
-      shortUrl.href =
-        data.shortUrl;
+      shortLink.textContent =
+        publicUrl;
 
       result.style.display =
         "block";
 
-
     } catch (error) {
 
-      console.error(error);
-
-      errorBox.textContent =
+      showError(
         error.message ||
-        "Failed to fetch.";
+        "Có lỗi xảy ra."
+      );
 
     } finally {
 
-      shortenBtn.disabled =
-        false;
+      shortenBtn.disabled = false;
 
-      loading.style.display =
-        "none";
+      shortenBtn.textContent =
+        "Rút gọn";
+
     }
+
   }
+);
 
 
-  // ==================================================
-  // COPY
-  // ==================================================
+copyBtn.addEventListener(
+  "click",
+  async () => {
 
-  copyBtn.addEventListener(
-    "click",
-    async function() {
+    const text =
+      shortLink.textContent;
 
-      const text =
-        shortUrl.textContent;
+    if (!text) return;
 
-      try {
+    try {
 
-        await navigator.clipboard
-          .writeText(text);
+      await navigator.clipboard.writeText(
+        text
+      );
+
+      copyBtn.textContent =
+        "Đã sao chép ✓";
+
+      setTimeout(() => {
 
         copyBtn.textContent =
-          "Đã sao chép ✓";
+          "Sao chép";
 
-        setTimeout(() => {
-          copyBtn.textContent =
-            "Sao chép";
-        }, 1500);
+      }, 1500);
 
-      } catch {
+    } catch {
 
-        alert(
-          "Không thể sao chép."
-        );
+      showError(
+        "Không thể sao chép."
+      );
 
-      }
     }
-  );
+
+  }
+);
+
 </script>
 
 </body>
